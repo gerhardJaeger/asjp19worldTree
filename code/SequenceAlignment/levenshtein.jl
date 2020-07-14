@@ -25,8 +25,8 @@ function levenshteinAlign(s1::T, s2::T) where {T<:Union{AbstractString,Vector}}
             pointer[j+1, i+1] = argmin(states) - 1
         end
     end
-    a1 = eltype(s1)[]
-    a2 = eltype(s2)[]
+    a1 = Union{eltype(s1), Missing}[]
+    a2 = Union{eltype(s2), Missing}[]
     i, j = m + 1, n + 1
     while pointer[j, i] >= 0
         p = pointer[j, i]
@@ -37,10 +37,10 @@ function levenshteinAlign(s1::T, s2::T) where {T<:Union{AbstractString,Vector}}
             j -= 1
         elseif p == 1
             pushfirst!(a1, s1[j-1])
-            pushfirst!(a2, "-")
+            pushfirst!(a2, missing)
             j -= 1
         else
-            pushfirst!(a1, "-")
+            pushfirst!(a1, missing)
             pushfirst!(a2, s2[i-1])
             i -= 1
         end
