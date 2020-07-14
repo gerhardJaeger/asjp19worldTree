@@ -1,10 +1,5 @@
-# using Pkg
-# Pkg.activate(@__DIR__)
-# Pkg.instantiate()
 
-__precompile__()
 
-module SequenceAlignment
 
 @doc raw"""
 `levenshteinAlign` returns the Levenshtein-optimal pairwise alignment
@@ -85,9 +80,4 @@ $L(x,y) /max(|x|, |y|)$
 """
 function ldn(s1::T, s2::T) where {T<:Union{AbstractString,Vector}}
     levenshteinDistance(s1, s2) / maximum(length.([s1, s2]))
-end
-export levenshteinAlign
-export levenshteinDistance
-export ldn
-
 end
