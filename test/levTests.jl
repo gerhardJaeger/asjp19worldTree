@@ -2,7 +2,7 @@ cd(@__DIR__)
 
 using CSV, Test, DataFrames
 
-include("../code/alignment.jl")
+include("../code/SequenceAlignment/SequenceAlignment.jl")
 
 using .SequenceAlignment
 
