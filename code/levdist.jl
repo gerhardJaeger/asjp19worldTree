@@ -7,22 +7,23 @@ using Pkg; Pkg.activate(".."); Pkg.instantiate()
 include("SequenceAlignment/SequenceAlignment.jl")
 
 using CSV, DataFrames, LinearAlgebra, StatsBase
-import .SequenceAlignment:ldn
-
-# extend ldn to missing
-function ldn(w1::Union{Missing,String}, w2::Union{Missing,String})
-    if ismissing(w1) || ismissing(w2)
-        return missing
-    else
-        return SequenceAlignment.ldn(w1,w2)
-    end
-end
+using .SequenceAlignment
 
 function ldnStar(w1::Union{Missing,String},w2::Union{Missing,String})
     if ismissing(w1) || ismissing(w2)
         return missing
     end
-    minimum([ldn(x,y) for x in split(w1,"-") for y in split(w2,"-")])
+    v1 = split(w1,"-")
+    v2 = split(w2,"-")
+    scores = Vector{Float64}(undef, length(v1)*length(v2))
+    counter = 1
+    for x in v1
+        for y in v2
+            @inbounds scores[counter] = ldn(x,y)
+            counter += 1
+        end
+    end
+    minimum(scores)
 end
 
 
@@ -58,25 +59,26 @@ function dercLDN(
     for (k, c) in enumerate(definedBoth)
         dg[k] = ldnStar(asjpMtx[i, c], asjpMtx[j, c])
     end
-    offDg = Vector{Float64}(undef, length(defined1) * length(defined2) - nBoth)
+    nOffD = length(defined1) * length(defined2) - nBoth
+    offDg = Vector{Float64}(undef, nOffD)
     counter = 1
     for k1 in defined1
         w1 = asjpMtx[i, k1]
         for k2 in defined2
             if k1 != k2
                 w2 = asjpMtx[j, k2]
-                offDg[counter] = ldnStar(w1, w2)
+                @inbounds offDg[counter] = ldnStar(w1, w2)
                 counter += 1
             end
         end
     end
     ranks = Vector{Float64}(undef, nBoth)
     for k = 1:nBoth
-        x = dg[k]
-        ranks[k] = geomean(1 .+ (sum(offDg .< x):sum(offDg .<= x)))
+        @inbounds x = dg[k]
+        @inbounds ranks[k] = geomean(1 .+ (sum(offDg .< x):sum(offDg .<= x)))
     end
-    stc = mean(-log.(ranks ./ (1 + length(offDg))))
-    sim = (stc - 1) * sqrt(length(dg))
+    stc = mean(-log.(ranks ./ (1 + nOffD)))
+    sim = (stc - 1) * sqrt(nBoth)
     (maxSim - sim) / (maxSim - minSim)
 end
 
