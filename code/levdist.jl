@@ -6,7 +6,7 @@ using Pkg; Pkg.activate(".."); Pkg.instantiate()
 
 include("SequenceAlignment/SequenceAlignment.jl")
 
-using CSV, DataFrames, LinearAlgebra, StatsBase
+using CSV, DataFrames, LinearAlgebra, StatsBase, ProgressMeter
 using .SequenceAlignment
 
 function ldnStar(w1::Union{Missing,String},w2::Union{Missing,String})
@@ -90,3 +90,26 @@ eng = "IE.GERMANIC.ENGLISH"
 @show dercLDN(ger, eng)
 
 @time gerDsts = [dercLDN(ger, l) for l in languages]
+
+gerDists = Vector{Float64}(undef, length(languages))
+@showprogress for i in 1:length(languages)
+    gerDsts[i] = dercLDN(ger, languages[i])
+end
+
+lpairs = permutedims(hcat([
+    [l1, l2] for (i, l1) in enumerate(languages)
+    for (j, l2) in enumerate(languages) if i < j
+]...))
+
+
+ldists = Vector{Union{Float64, Missing}}(undef, size(lpairs,1))
+Threads.@threads for i in 1:size(lpairs,1)
+    l1, l2 = lpairs[i,:]
+    ldists[i] = dercLDN(l1, l2)
+end
+
+levDistsLong = DataFrame(l1=lpairs[:,1], l2=lpairs[:,2], ldist=ldists)
+
+levDists = unstack(levDistsLong, :l1, :l2, :ldist)
+
+CSV.write("../data/levenshteinLanguageDistances.csv", levDists)
