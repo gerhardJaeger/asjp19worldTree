@@ -90,3 +90,10 @@ eng = "IE.GERMANIC.ENGLISH"
 @show dercLDN(ger, eng)
 
 @time gerDsts = [dercLDN(ger, l) for l in languages]
+
+@time begin
+    gerDstsT = Vector{Float64}(undef, length(languages))
+    Threads.@threads for i in 1:length(languages)
+        gerDstsT[i] = dercLDN(ger, languages[i])
+    end
+end
